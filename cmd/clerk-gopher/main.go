@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/jaczerob/clerk-gopher/internal/sys"
@@ -15,9 +16,6 @@ var (
 	Username string
 	Password string
 	Verbose  bool
-
-	Directory  = "/Users/imac/Library/Application Support/Toontown Rewritten"
-	Executable = Directory + "/Toontown Rewritten"
 )
 
 func init() {
@@ -42,7 +40,14 @@ func init() {
 }
 
 func main() {
-	err := toontown.Update(Directory)
+	directory, err := sys.GetDirectory()
+	if err != nil {
+		log.WithField("error", err).Fatal("could not initialize toontown rewritten directory")
+	}
+
+	executable := fmt.Sprintf("%s/%s", directory, sys.GetExecutable())
+
+	err = toontown.Update(directory)
 	if err != nil {
 		log.WithField("error", err).Fatal("could not update")
 	}
@@ -77,5 +82,5 @@ func main() {
 	}
 
 	log.Println("entering toontown, have fun!")
-	sys.RunExecutable(Executable, gameserver, cookie)
+	sys.RunExecutable(executable, gameserver, cookie)
 }
