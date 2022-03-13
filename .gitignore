@@ -1,2 +1,3 @@
 *.sh
-/.vscode
+.vscode/
+.DS_Store
