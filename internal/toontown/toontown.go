@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -35,7 +36,7 @@ var (
 type LoginData struct {
 	Success    string `json:"success,omitempty"`
 	Gameserver string `json:"gameserver,omitempty"`
-	Cookie     string `json:"cookie,omitempty"`
+	Playcookie string `json:"cookie,omitempty"`
 	AppToken   string `json:"appToken,omitempty"`
 	AuthToken  string `json:"authToken,omitempty"`
 	ETA        string `json:"eta,omitempty"`
@@ -52,7 +53,40 @@ type ManifestData struct {
 	Patches  map[string]map[string]string `json:"patches"`
 }
 
-func Login(username string, password string) (loginData *LoginData, err error) {
+func Login(username string, password string) (gameserver string, playcookie string, err error) {
+	loginData, err := GetLoginData(username, password)
+	if err != nil {
+		log.WithField("error", err).Fatal("could not log in")
+	}
+
+	gameserver, playcookie = loginData.Gameserver, loginData.Playcookie
+	for gameserver == "" && playcookie == "" {
+		if loginData.Success == "delayed" {
+			log.WithFields(log.Fields{
+				"eta":      loginData.ETA,
+				"position": loginData.Position,
+			}).Println("in queue")
+
+			time.Sleep(5 * time.Second)
+
+			loginData, err := RefreshQueue(loginData.QueueToken)
+			if err != nil {
+				log.WithField("error", err).Fatal("could not log in")
+			}
+
+			gameserver, playcookie = loginData.Gameserver, loginData.Playcookie
+		} else if loginData.Success == "false" {
+			log.WithField("reason", loginData.Banner).Println("could not log in")
+			return
+		} else {
+			return
+		}
+	}
+
+	return
+}
+
+func GetLoginData(username string, password string) (loginData *LoginData, err error) {
 	log.WithField("username", username).Trace("attempting login")
 
 	parameters := map[string]string{
