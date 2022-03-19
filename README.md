@@ -1,15 +1,40 @@
-# clerk-gopher
-Clerk Gopher is just a simple command line launcher for Toontown Rewritten I made to learn Golang. It updates your TTR files then logs you into the game. Simple as that.
+<h1 align="center"> Clerk Gopher </h1>
 
-I provide binaries for macOS, Linux, and Windows in the bin folder, however it is only tested on macOS ARM64. If you happen to stumble upon this launcher and find issues with the other operating systems, let me know.
+A command-line launcher for Toontown Rewritten
 
-I will be randomly updating this as time goes and I get better at the language and such, but this launcher will only ever update your files and log you into the game.
+## Features
+- Updates your files
+- Logs you into the game
+- Save logins with OS-specific keyring
+
+## Works On
+- macOS (Intel*/Apple Silicon)
+- Windows (32/64-bit)*
+- Linux (64-bit)*
+
+*Not tested!
 
 ## Usage
 
 Download the file for your operating system and architecture in the bin folder.
 
-```zsh
+```
 # e.g. the macOS ARM64 file
-./clerk-gopher-arm64 --username username --password password
+
+$ clerk-gopher-arm64 --help
+A simple command line launcher written in Go to allow simple and fast login with login saving functionality
+
+Usage:
+  clerk-gopher [command]
+
+Available Commands:
+  help        Help about any command
+  login       Logs you into Toontown Rewritten with the information given
+  save        Saves the given username and password to your system's keyring
+
+Flags:
+  -h, --help      help for clerk-gopher
+  -v, --verbose   sets logging to verbose
+
+Use "clerk-gopher [command] --help" for more information about a command.
 ```
