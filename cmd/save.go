@@ -24,7 +24,7 @@ var saveCmd = &cobra.Command{
 		err := keyring.Set(KEYRING_SERVICE, saveUsername, savePassword)
 		cobra.CheckErr(err)
 
-		log.WithField("username", savePassword).Info("username save")
+		log.WithField("username", saveUsername).Info("login saved")
 	},
 }
 

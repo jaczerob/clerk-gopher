@@ -1,6 +1,7 @@
 package sys
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func RunExecutable(path string, gameserver string, cookie string) (err error) {
+func RunExecutable(path string, gameserver string, cookie string, pipe bool) (err error) {
 	log.WithFields(log.Fields{
 		"path":       path,
 		"gameserver": gameserver,
@@ -26,14 +27,29 @@ func RunExecutable(path string, gameserver string, cookie string) (err error) {
 	env = append(env, fmt.Sprintf("TTR_PLAYCOOKIE=%s", cookie))
 
 	cmd := &exec.Cmd{
-		Path:   path,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Env:    env,
+		Path: path,
+		Env:  env,
 	}
 
-	if err = cmd.Start(); err != nil {
-		return fmt.Errorf("could not start toontown rewritten: %s", err)
+	if pipe {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return fmt.Errorf("error obtaining stdout pipe: %s", err)
+		}
+
+		if err = cmd.Start(); err != nil {
+			return fmt.Errorf("could not start toontown rewritten: %s", err)
+		}
+
+		in := bufio.NewScanner(stdout)
+		for in.Scan() {
+			log.Trace(in.Text())
+		}
+
+	} else {
+		if err = cmd.Start(); err != nil {
+			return fmt.Errorf("could not start toontown rewritten: %s", err)
+		}
 	}
 
 	return

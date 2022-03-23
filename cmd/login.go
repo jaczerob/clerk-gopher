@@ -14,6 +14,7 @@ import (
 var (
 	loginUsername string
 	loginPassword string
+	doPipe        bool
 )
 
 var loginCmd = &cobra.Command{
@@ -39,16 +40,17 @@ var loginCmd = &cobra.Command{
 
 		executable := fmt.Sprintf("%s/%s", dir, sys.GetExecutable())
 
-		err = sys.RunExecutable(executable, gameserver, playcookie)
-		cobra.CheckErr(err)
-
 		log.WithField("username", loginUsername).Info("logging into toontown, have fun!")
+
+		err = sys.RunExecutable(executable, gameserver, playcookie, doPipe)
+		cobra.CheckErr(err)
 	},
 }
 
 func init() {
 	loginCmd.Flags().StringVarP(&loginUsername, "username", "u", "", "your TTR username")
 	loginCmd.Flags().StringVarP(&loginPassword, "password", "p", "", "your TTR password")
+	loginCmd.Flags().BoolVar(&doPipe, "pipe", false, "whether to pipe stdout to clerk-gopher process")
 	loginCmd.MarkFlagRequired("username")
 	rootCmd.AddCommand(loginCmd)
 }
