@@ -1,7 +1,13 @@
 package main
 
-import "github.com/jaczerob/clerk-gopher/cmd"
+import (
+	"github.com/jaczerob/clerk-gopher/cmd"
+	log "github.com/sirupsen/logrus"
+)
 
 func main() {
-	cmd.Execute()
+	err := cmd.Execute()
+	if err != nil {
+		log.Panic(err)
+	}
 }

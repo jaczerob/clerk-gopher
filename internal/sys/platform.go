@@ -1,8 +1,8 @@
 package sys
 
 import (
-	"fmt"
 	"os"
+	"path"
 	"runtime"
 )
 
@@ -24,16 +24,16 @@ func GetPlatform() (platform string) {
 func GetDirectory() (dir string, err error) {
 	switch GetPlatform() {
 	case "win32":
-		dir = "C:\\Program Files\\Toontown Rewritten\\"
+		dir = "C:\\Program Files\\Toontown Rewritten"
 	case "win64":
-		dir = "C:\\Program Files (x86)\\Toontown Rewritten\\"
+		dir = "C:\\Program Files (x86)\\Toontown Rewritten"
 	case "darwin":
 		home, err := os.UserHomeDir()
 		if err != nil {
 			return "", err
 		}
 
-		dir = fmt.Sprintf("%s/Library/Application Support/Toontown Rewritten", home)
+		dir = path.Join(home, "/Library/Application Support/Toontown Rewritten")
 
 	default:
 		home, err := os.UserHomeDir()
@@ -41,7 +41,7 @@ func GetDirectory() (dir string, err error) {
 			return "", err
 		}
 
-		dir = fmt.Sprintf("%s/Toontown Rewritten", home)
+		dir = path.Join(home, "/Toontown Rewritten")
 	}
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {

@@ -24,26 +24,34 @@ var loginCmd = &cobra.Command{
 	for logins associated with Toontown Rewritten and your username, otherwise providing 
 	a password as well will log you straight in with that info`,
 	Example: "clerk-gopher login -u username [-p password]",
-	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if loginPassword == "" {
 			loginPassword, err = keyring.Get(KEYRING_SERVICE, loginUsername)
-			cobra.CheckErr(err)
+			if err != nil {
+				return
+			}
+		}
+
+		dir, err := sys.GetDirectory()
+		if err != nil {
+			return
+		}
+
+		err = toontown.Update(dir)
+		if err != nil {
+			return
 		}
 
 		gameserver, playcookie, err := toontown.Login(loginUsername, loginPassword)
-		cobra.CheckErr(err)
-
-		dir, err := sys.GetDirectory()
-		cobra.CheckErr(err)
+		if err != nil {
+			return
+		}
 
 		executable := fmt.Sprintf("%s/%s", dir, sys.GetExecutable())
 
-		log.WithField("username", loginUsername).Info("logging into toontown, have fun!")
+		log.WithField("username", loginUsername).Printf("logging into toontown, have fun!")
 
-		err = sys.RunExecutable(executable, gameserver, playcookie, doPipe)
-		cobra.CheckErr(err)
+		return sys.RunExecutable(executable, gameserver, playcookie, doPipe)
 	},
 }
 

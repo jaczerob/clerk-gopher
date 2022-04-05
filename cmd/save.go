@@ -20,11 +20,14 @@ var saveCmd = &cobra.Command{
 	Long: `Saving the login allows you to log in with just your username using the
 	login command. Using a username already saved will override your previous login.`,
 	Example: "clerk-gopher save -u username -p password",
-	Run: func(cmd *cobra.Command, args []string) {
-		err := keyring.Set(KEYRING_SERVICE, saveUsername, savePassword)
-		cobra.CheckErr(err)
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		err = keyring.Set(KEYRING_SERVICE, saveUsername, savePassword)
+		if err != nil {
+			return
+		}
 
 		log.WithField("username", saveUsername).Info("login saved")
+		return
 	},
 }
 
