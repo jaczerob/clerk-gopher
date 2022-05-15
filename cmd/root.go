@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jaczerob/clerk-gopher/internal/static"
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ func init() {
 func initLogger() {
 	log.SetFormatter(&prefixed.TextFormatter{
 		ForceColors:     true,
-		TimestampFormat: "2006-01-02 15:04:05",
+		TimestampFormat: static.LoggerTimestampFormat,
 		FullTimestamp:   true,
 		ForceFormatting: true,
 		DisableSorting:  true,

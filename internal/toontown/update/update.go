@@ -1,48 +1,29 @@
 package update
 
 import (
-	"compress/bzip2"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/jaczerob/clerk-gopher/internal/static"
-	"github.com/jaczerob/clerk-gopher/internal/sys"
+	"github.com/jaczerob/clerk-gopher/internal/util"
 	log "github.com/sirupsen/logrus"
 )
 
-type UpdateClient struct {
-	Directory string
-
-	http    *http.Client
-	headers map[string]string
-	baseURL *url.URL
-}
-
-func NewUpdateClient() (c *UpdateClient, err error) {
+func NewUpdateClient(executable *util.Executable) (c *UpdateClient, err error) {
 	baseURL, err := url.Parse(static.UpdateDownloadURL)
 	if err != nil {
 		return
 	}
 
-	dir, err := sys.GetDirectory()
-	if err != nil {
-		return
-	}
-
 	c = &UpdateClient{
-		http:      &http.Client{},
-		headers:   static.Headers,
-		baseURL:   baseURL,
-		Directory: dir,
+		executable: executable,
+		http:       &http.Client{},
+		headers:    static.Headers,
+		baseURL:    baseURL,
 	}
 
 	return
@@ -55,6 +36,8 @@ func (c *UpdateClient) Update() (err error) {
 	}
 
 	for _, file := range updateFiles {
+		log.Info("updating", file.Name)
+
 		err := c.downloadBZ2(file)
 		if err != nil {
 			return err
@@ -108,13 +91,6 @@ func (c *UpdateClient) downloadBZ2(file *UpdateFile) (err error) {
 		"url":      file.URL,
 	}).Trace("downloading")
 
-	out, err := getFile(file.Path)
-	if err != nil {
-		return
-	}
-
-	defer out.Close()
-
 	resp, err := c.http.Get(file.URL)
 	if err != nil {
 		return
@@ -124,13 +100,12 @@ func (c *UpdateClient) downloadBZ2(file *UpdateFile) (err error) {
 		return fmt.Errorf("bad http status: %d", resp.StatusCode)
 	}
 
-	decompressed := bzip2.NewReader(resp.Body)
-	_, err = io.Copy(out, decompressed)
+	file.Read(resp.Body)
 	return
 }
 
 func (c *UpdateClient) getUpdateFiles() (updateFiles []*UpdateFile, err error) {
-	log.WithField("dir", c.Directory).Trace("checking for updates")
+	log.Trace("checking for updates")
 
 	manifest, err := c.getManifest()
 	if err != nil {
@@ -138,26 +113,28 @@ func (c *UpdateClient) getUpdateFiles() (updateFiles []*UpdateFile, err error) {
 	}
 
 	for file, fileManifest := range manifest {
-		if !platformIsIn(fileManifest.Only) {
+		if !c.platformIsIn(fileManifest.Only) {
 			log.WithField("file", file).Trace("ignoring non-OS compliant file")
 			continue
 		}
 
-		filepath := path.Join(c.Directory, file)
-		if _, statErr := os.Stat(filepath); !os.IsNotExist(statErr) {
-			log.WithField("file", file).Trace("exists, hash checking")
+		u := *c.baseURL
+		u.Path = path.Join(u.Path, fileManifest.DL)
 
-			fileHash, fileErr := getHash(filepath)
-			if fileErr != nil {
-				return nil, fileErr
-			}
+		filepath := path.Join(c.executable.Directory, file)
+		updateFile, err := NewUpdateFile(file, filepath, u.String())
+		if err != nil {
+			return nil, err
+		}
 
+		if updateFile.Exists {
 			log.WithFields(log.Fields{
+				"file":         file,
 				"manifestHash": fileManifest.Hash,
-				"fileHash":     fileHash,
-			}).Trace("testing hash")
+				"fileHash":     updateFile.Hash,
+			}).Trace("exists, testing hash")
 
-			if fileHash == fileManifest.Hash {
+			if updateFile.Hash == fileManifest.Hash {
 				log.WithField("file", file).Trace("up to date")
 				continue
 			} else {
@@ -167,53 +144,15 @@ func (c *UpdateClient) getUpdateFiles() (updateFiles []*UpdateFile, err error) {
 			log.WithField("file", file).Trace("does not exist, queueing for download")
 		}
 
-		u := *c.baseURL
-		u.Path = path.Join(u.Path, fileManifest.DL)
-
-		updateFiles = append(updateFiles, &UpdateFile{
-			Name: file,
-			Path: filepath,
-			URL:  u.String(),
-		})
+		updateFiles = append(updateFiles, updateFile)
 	}
 
 	return
 }
 
-func getFile(filePath string) (file *os.File, err error) {
-	dir := filepath.Dir(filePath)
-
-	if _, err = os.Stat(dir); os.IsNotExist(err) {
-		errDir := os.MkdirAll(dir, 0700)
-		if errDir != nil {
-			return nil, errDir
-		}
-	}
-
-	return os.Create(filePath)
-}
-
-func getHash(filepath string) (string, error) {
-	log.WithField("file", filepath).Trace("getting file hash")
-
-	file, err := os.Open(filepath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hash := sha1.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func platformIsIn(only []string) bool {
-	curPlatform := sys.GetPlatform()
-
+func (c *UpdateClient) platformIsIn(only []string) bool {
 	for _, platform := range only {
-		if platform == curPlatform {
+		if platform == c.executable.Platform {
 			return true
 		}
 	}

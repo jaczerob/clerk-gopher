@@ -12,12 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type LoginClient struct {
-	http    *http.Client
-	headers map[string]string
-	baseURL *url.URL
-}
-
 func NewLoginClient() *LoginClient {
 	baseURL, _ := url.Parse(static.LoginEndpoint)
 	return &LoginClient{

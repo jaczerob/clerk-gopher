@@ -1,5 +1,16 @@
 package login
 
+import (
+	"net/http"
+	"net/url"
+)
+
+type LoginClient struct {
+	http    *http.Client
+	headers map[string]string
+	baseURL *url.URL
+}
+
 type LoginData struct {
 	Success    string `json:"success,omitempty"`
 	Gameserver string `json:"gameserver,omitempty"`

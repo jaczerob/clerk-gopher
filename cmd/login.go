@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/jaczerob/clerk-gopher/internal/sys"
 	"github.com/jaczerob/clerk-gopher/internal/toontown/login"
 	"github.com/jaczerob/clerk-gopher/internal/toontown/update"
+	"github.com/jaczerob/clerk-gopher/internal/util"
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
 
@@ -33,7 +31,12 @@ var loginCmd = &cobra.Command{
 			}
 		}
 
-		updater, err := update.NewUpdateClient()
+		executable, err := util.NewExecutable()
+		if err != nil {
+			return
+		}
+
+		updater, err := update.NewUpdateClient(executable)
 		if err != nil {
 			return
 		}
@@ -50,11 +53,8 @@ var loginCmd = &cobra.Command{
 			return
 		}
 
-		executable := fmt.Sprintf("%s/%s", updater.Directory, sys.GetExecutable())
-
-		log.WithField("username", loginUsername).Printf("logging into toontown, have fun!")
-
-		return sys.RunExecutable(executable, gameserver, playcookie, doPipe)
+		log.Printf("logging into toontown, have fun!")
+		return executable.RunExecutable(gameserver, playcookie, doPipe)
 	},
 }
 
