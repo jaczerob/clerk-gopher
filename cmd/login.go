@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/jaczerob/clerk-gopher/internal/sys"
-	"github.com/jaczerob/clerk-gopher/internal/toontown"
+	"github.com/jaczerob/clerk-gopher/internal/toontown/login"
+	"github.com/jaczerob/clerk-gopher/internal/toontown/update"
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
 
@@ -32,22 +33,24 @@ var loginCmd = &cobra.Command{
 			}
 		}
 
-		dir, err := sys.GetDirectory()
+		updater, err := update.NewUpdateClient()
 		if err != nil {
 			return
 		}
 
-		err = toontown.Update(dir)
+		err = updater.Update()
 		if err != nil {
 			return
 		}
 
-		gameserver, playcookie, err := toontown.Login(loginUsername, loginPassword)
+		login := login.NewLoginClient()
+
+		gameserver, playcookie, err := login.Login(loginUsername, loginPassword)
 		if err != nil {
 			return
 		}
 
-		executable := fmt.Sprintf("%s/%s", dir, sys.GetExecutable())
+		executable := fmt.Sprintf("%s/%s", updater.Directory, sys.GetExecutable())
 
 		log.WithField("username", loginUsername).Printf("logging into toontown, have fun!")
 

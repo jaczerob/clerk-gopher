@@ -1,6 +1,6 @@
 module github.com/jaczerob/clerk-gopher
 
-go 1.17
+go 1.18
 
 require (
 	github.com/sirupsen/logrus v1.8.1
@@ -8,13 +8,6 @@ require (
 )
 
 require github.com/stretchr/objx v0.2.0 // indirect
-
-require (
-	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/schollz/progressbar/v3 v3.8.6
-)
 
 require (
 	github.com/alessio/shellescape v1.4.1 // indirect
